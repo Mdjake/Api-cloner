@@ -446,12 +446,28 @@ class TelegramBot:
         app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
+import threading
+from flask import Flask
+
+health_app = Flask(__name__)
+
+@health_app.route('/')
+def health():
+    return 'Bot is running', 200
+
+def run_health_server():
+    port = int(os.environ.get('PORT', 8080))
+    health_app.run(host='0.0.0.0', port=port)
+
 if __name__ == '__main__':
     TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN', '')
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
     if not TELEGRAM_TOKEN or not GROQ_API_KEY:
         raise ValueError("Set TELEGRAM_TOKEN and GROQ_API_KEY environment variables.")
+
+    thread = threading.Thread(target=run_health_server, daemon=True)
+    thread.start()
 
     bot = TelegramBot(token=TELEGRAM_TOKEN, groq_api_key=GROQ_API_KEY)
     bot.run()
